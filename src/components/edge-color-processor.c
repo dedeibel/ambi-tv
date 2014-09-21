@@ -98,6 +98,14 @@ ambitv_edge_color_processor_update_sink(
             sink->f_set_output_to_rgb(sink, i, rgb[0], rgb[1], rgb[2]);
          }
       }
+
+			// TODO
+			for (int w = n_out; w < 240; w++) {
+				unsigned char r = 255;
+				unsigned char g = 255;
+				unsigned char b = 255;
+      	sink->f_set_output_to_rgb(sink, w, r, g, b);
+			}
    } else
       ret = -1;
 
