@@ -108,7 +108,7 @@ struct usbtv {
 static int usbtv_setup_capture(struct usbtv *usbtv)
 {
        int ret;
-       int pipe = usb_rcvctrlpipe(usbtv->udev, 0);
+       unsigned int pipe = usb_rcvctrlpipe(usbtv->udev, 0u);
        int i;
        static const u16 protoregs[][2] = {
                /* These seem to enable the device. */
@@ -232,7 +232,7 @@ static int usbtv_setup_capture(struct usbtv *usbtv)
 
                ret = usb_control_msg(usbtv->udev, pipe, USBTV_REQUEST_REG,
                        USB_DIR_OUT | USB_TYPE_VENDOR | USB_RECIP_DEVICE,
-                       value, index, NULL, 0, 0);
+                       value, index, NULL, (u16)0, 0);
                if (ret < 0)
                        return ret;
        }
@@ -266,7 +266,7 @@ static void usbtv_chunk_to_vbuf(u32 *frame, u32 *src, int chunk_no, int odd)
  * data and padding. */
 static void usbtv_image_chunk(struct usbtv *usbtv, u32 *chunk)
 {
-       int frame_id, odd, chunk_no, chunk_no_orig;
+       unsigned int frame_id, odd, chunk_no, chunk_no_orig;
        u32 *frame;
        struct usbtv_buf *buf;
        unsigned long flags;
@@ -307,7 +307,7 @@ static void usbtv_image_chunk(struct usbtv *usbtv, u32 *chunk)
 
        /* Last chunk in a frame, signalling an end */
        if (odd && chunk_no == USBTV_CHUNKS-1) {
-               int size = vb2_plane_size(&buf->vb, 0);
+               unsigned long size = vb2_plane_size(&buf->vb, 0);
                
                enum vb2_buffer_state state = usbtv->chunks_done ==
                                                               USBTV_CHUNKS ?
@@ -351,10 +351,10 @@ static void usbtv_iso_cb(struct urb *ip)
       
        if (pkt_ok)
           for (i = 0; i < ip->number_of_packets; i++) {
-                  int size = ip->iso_frame_desc[i].actual_length;
+                  unsigned int size = ip->iso_frame_desc[i].actual_length;
                   unsigned char *data = ip->transfer_buffer +
                                   ip->iso_frame_desc[i].offset;
-                  int offset;
+                  unsigned int offset;
                   
                   for (offset = 0; USBTV_CHUNK_SIZE * offset < size; offset++)
                           usbtv_image_chunk(usbtv,

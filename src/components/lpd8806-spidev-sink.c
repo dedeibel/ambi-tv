@@ -138,6 +138,7 @@ ambitv_lpd8806_commit_outputs(struct ambitv_sink_component* component)
       (struct ambitv_lpd8806_priv*)component->priv;
       
    if (lpd8806->fd >= 0) {
+// TODO BP add light to grb
       ret = write(lpd8806->fd, lpd8806->grb, lpd8806->grblen+1);
       
       if (ret != lpd8806->grblen+1) {
@@ -214,9 +215,12 @@ ambitv_lpd8806_set_output_to_rgb(
             *rgb[i] = ambitv_color_map_with_lut(lpd8806->gamma_lut[i], *rgb[i]);
       }
       
-      lpd8806->grb[3 * ii]       = g >> 1 | 0x80;
+//      lpd8806->grb[3 * ii]       = g >> 1 | 0x80;
+//      lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
+//      lpd8806->grb[3 * ii + 2]   = b >> 1 | 0x80;
+      lpd8806->grb[3 * ii]       = b >> 1 | 0x80;
       lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
-      lpd8806->grb[3 * ii + 2]   = b >> 1 | 0x80;
+      lpd8806->grb[3 * ii + 2]   = g >> 1 | 0x80;
       
       ret = 0;
    }
