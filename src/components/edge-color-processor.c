@@ -24,6 +24,20 @@
 
 #include "edge-color-processor.h"
 
+// BP: Hack, setting superflous LEDs to white in order to consume a minimum
+// amount of power
+extern struct ambitv_lpd8806_priv {
+   char*             device_name;
+   int               fd, spi_speed, num_leds, actual_num_leds, grblen;
+   int               led_len[4], *led_str[4];   // top, bottom, left, right
+   double            led_inset[4];              // top, bottom, left, right
+   unsigned char*    grb;
+   unsigned char**   bbuf;
+   int               num_bbuf, bbuf_idx;
+   double            gamma[3];      // RGB gamma, not GRB!
+   unsigned char*    gamma_lut[3];  // also RGB
+};
+
 #include "../video-fmt.h"
 #include "../util.h"
 #include "../log.h"
@@ -65,7 +79,7 @@ ambitv_edge_color_processor_update_sink(
    struct ambitv_processor_component* processor,
    struct ambitv_sink_component* sink)
 {
-   int i, n_out, ret = 0;
+   int i, w, n_out, ret = 0;
 
    struct ambitv_edge_processor_priv* edge =
       (struct ambitv_edge_processor_priv*)processor->priv;
@@ -94,17 +108,23 @@ ambitv_edge_color_processor_update_sink(
             y2 = CONSTRAIN(y+4, 0, edge->height);
             
             ambitv_video_fmt_avg_rgb_for_block(rgb, edge->frame, x, y, x2-x, y2-y, edge->bytesperline, edge->fmt, 4);
-            
             sink->f_set_output_to_rgb(sink, i, rgb[0], rgb[1], rgb[2]);
          }
       }
 
-			// TODO
-			for (int w = n_out; w < 240; w++) {
+			// BP: Hack, setting superflous LEDs to white in order to consume a minimum
+			// amount of power
+			for (w = n_out; w < 240; w++) {
 				unsigned char r = 255;
 				unsigned char g = 255;
 				unsigned char b = 255;
-      	sink->f_set_output_to_rgb(sink, w, r, g, b);
+
+   			struct ambitv_lpd8806_priv* lpd =
+   			   (struct ambitv_lpd8806_priv*)sink->priv;
+
+        lpd->grb[3 * w] 		= b >> 1 | 0x80;
+        lpd->grb[3 * w + 1] = r >> 1 | 0x80;
+        lpd->grb[3 * w + 2] = g >> 1 | 0x80;
 			}
    } else
       ret = -1;

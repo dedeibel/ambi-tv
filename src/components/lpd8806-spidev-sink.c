@@ -557,7 +557,9 @@ ambitv_lpd8806_create(const char* name, int argc, char** argv)
       if (ambitv_lpd8806_configure(lpd8806, argc, argv) < 0)
          goto errReturn;
       
-      priv->grblen   = sizeof(unsigned char) * 3 * priv->actual_num_leds;
+			// BP: Hack for minimum power consumption
+      //priv->grblen   = sizeof(unsigned char) * 3 * priv->actual_num_leds;
+      priv->grblen   = sizeof(unsigned char) * 3 * 240;
       priv->grb      = (unsigned char*)malloc(priv->grblen+1);
       
       if (priv->num_bbuf > 1) {
