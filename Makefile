@@ -27,6 +27,7 @@ SRC_AMBITV = src/main.c src/video-fmt.c src/parse-conf.c src/component.c   \
 	src/components/v4l2-grab-source.c src/components/avg-color-processor.c  \
 	src/components/lpd8806-spidev-sink.c src/components/timer-source.c      \
 	src/components/edge-color-processor.c                                   \
+	src/components/edge-color-withpadding-processor.c                       \
 	src/components/mood-light-processor.c
 OBJ_AMBITV = $(SRC_AMBITV:.c=.o)
 
@@ -36,10 +37,10 @@ all: $(AMBITV)
 
 ambi-tv: $(OBJ_AMBITV)
 	$(dir)
-	gcc $(LDFLAGS) $(OBJ_AMBITV) -o bin/$@      
+	$(CC) $(LDFLAGS) $(OBJ_AMBITV) -o bin/$@      
 
 .c.o:
-	gcc $(CFLAGS) -c $< -o $@    
+	$(CC) $(CFLAGS) -c $< -o $@    
 
 clean:
 	rm -f $(OBJ_AMBITV)

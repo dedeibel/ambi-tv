@@ -22,7 +22,7 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "edge-color-processor.h"
+#include "edge-color-withpadding-processor.h"
 
 #include "../video-fmt.h"
 #include "../util.h"
@@ -33,14 +33,28 @@
 
 #define LOGNAME   "edge-color-processor: "
 
-struct ambitv_edge_processor_priv {
+// Hack, setting superflous LEDs to white in order to consume a minimum
+// amount of power, copied from lpd8806-spidev-sink
+struct ambitv_lpd8806_priv {
+   char*             device_name;
+   int               fd, spi_speed, num_leds, actual_num_leds, grblen;
+   int               led_len[4], *led_str[4];   // top, bottom, left, right
+   double            led_inset[4];              // top, bottom, left, right
+   unsigned char*    grb;
+   unsigned char**   bbuf;
+   int               num_bbuf, bbuf_idx;
+   double            gamma[3];      // RGB gamma, not GRB!
+   unsigned char*    gamma_lut[3];  // also RGB
+};
+
+struct ambitv_edge_withpadding_processor_priv {
    void* frame;
    int width, height, bytesperline, boxsize[2];
    enum ambitv_video_format fmt;
 };
 
 static int
-ambitv_edge_color_processor_handle_frame(
+ambitv_edge_color_withpadding_processor_handle_frame(
    struct ambitv_processor_component* component,
    void* frame,
    int width,
@@ -48,8 +62,8 @@ ambitv_edge_color_processor_handle_frame(
    int bytesperline,
    enum ambitv_video_format fmt
 ) {
-   struct ambitv_edge_processor_priv* edge =
-      (struct ambitv_edge_processor_priv*)component->priv;
+   struct ambitv_edge_withpadding_processor_priv* edge =
+      (struct ambitv_edge_withpadding_processor_priv*)component->priv;
 
    edge->frame          = frame;
    edge->width          = width;
@@ -61,14 +75,14 @@ ambitv_edge_color_processor_handle_frame(
 }
 
 static int
-ambitv_edge_color_processor_update_sink(
+ambitv_edge_color_withpadding_processor_update_sink(
    struct ambitv_processor_component* processor,
    struct ambitv_sink_component* sink)
 {
-   int i, n_out, ret = 0;
+   int i, w, n_out, ret = 0;
 
-   struct ambitv_edge_processor_priv* edge =
-      (struct ambitv_edge_processor_priv*)processor->priv;
+   struct ambitv_edge_withpadding_processor_priv* edge =
+      (struct ambitv_edge_withpadding_processor_priv*)processor->priv;
    
    if (NULL == edge->frame)
       return 0;
@@ -94,10 +108,24 @@ ambitv_edge_color_processor_update_sink(
             y2 = CONSTRAIN(y+4, 0, edge->height);
             
             ambitv_video_fmt_avg_rgb_for_block(rgb, edge->frame, x, y, x2-x, y2-y, edge->bytesperline, edge->fmt, 4);
-            
             sink->f_set_output_to_rgb(sink, i, rgb[0], rgb[1], rgb[2]);
          }
       }
+
+			// Hack, setting superflous LEDs to white in order to consume a minimum
+			// amount of power
+			for (w = n_out; w < 240; w++) {
+				unsigned char r = 255;
+				unsigned char g = 255;
+				unsigned char b = 255;
+
+   			struct ambitv_lpd8806_priv* lpd =
+   			   (struct ambitv_lpd8806_priv*)sink->priv;
+
+        lpd->grb[3 * w] 		= b >> 1 | 0x80;
+        lpd->grb[3 * w + 1] = r >> 1 | 0x80;
+        lpd->grb[3 * w + 2] = g >> 1 | 0x80;
+			}
    } else
       ret = -1;
 
@@ -108,7 +136,7 @@ ambitv_edge_color_processor_update_sink(
 }
 
 static int
-ambitv_edge_color_processor_configure(struct ambitv_edge_processor_priv* edge, int argc, char** argv)
+ambitv_edge_color_withpadding_processor_configure(struct ambitv_edge_withpadding_processor_priv* edge, int argc, char** argv)
 {
    int c, ret = 0;
 
@@ -161,10 +189,10 @@ errReturn:
 }
 
 static void
-ambitv_edge_color_processor_print_configuration(struct ambitv_processor_component* component)
+ambitv_edge_color_withpadding_processor_print_configuration(struct ambitv_processor_component* component)
 {
-   struct ambitv_edge_processor_priv* edge =
-      (struct ambitv_edge_processor_priv*)component->priv;
+   struct ambitv_edge_withpadding_processor_priv* edge =
+      (struct ambitv_edge_withpadding_processor_priv*)component->priv;
 
    ambitv_log(ambitv_log_info,
       "\tbox-width:  %d\n"
@@ -175,33 +203,33 @@ ambitv_edge_color_processor_print_configuration(struct ambitv_processor_componen
 }
 
 static void
-ambitv_edge_color_processor_free(struct ambitv_processor_component* component)
+ambitv_edge_color_withpadding_processor_free(struct ambitv_processor_component* component)
 {
    free(component->priv);
 }
 
 struct ambitv_processor_component*
-ambitv_edge_color_processor_create(const char* name, int argc, char** argv)
+ambitv_edge_color_withpadding_processor_create(const char* name, int argc, char** argv)
 {
    struct ambitv_processor_component* edge_processor =
       ambitv_processor_component_create(name);
 
    if (NULL != edge_processor) {
-      struct ambitv_edge_processor_priv* priv =
-         (struct ambitv_edge_processor_priv*)malloc(sizeof(struct ambitv_edge_processor_priv));
-      memset(priv, 9, sizeof(struct ambitv_edge_processor_priv));
+      struct ambitv_edge_withpadding_processor_priv* priv =
+         (struct ambitv_edge_withpadding_processor_priv*)malloc(sizeof(struct ambitv_edge_withpadding_processor_priv));
+      memset(priv, 9, sizeof(struct ambitv_edge_withpadding_processor_priv));
 
       edge_processor->priv = (void*)priv;
       
       priv->boxsize[0]  = DEFAULT_BOX_WIDTH;
       priv->boxsize[1]  = DEFAULT_BOX_HEIGHT;
 
-      edge_processor->f_print_configuration  = ambitv_edge_color_processor_print_configuration;
-      edge_processor->f_consume_frame        = ambitv_edge_color_processor_handle_frame;
-      edge_processor->f_update_sink          = ambitv_edge_color_processor_update_sink;
-      edge_processor->f_free_priv            = ambitv_edge_color_processor_free;
+      edge_processor->f_print_configuration  = ambitv_edge_color_withpadding_processor_print_configuration;
+      edge_processor->f_consume_frame        = ambitv_edge_color_withpadding_processor_handle_frame;
+      edge_processor->f_update_sink          = ambitv_edge_color_withpadding_processor_update_sink;
+      edge_processor->f_free_priv            = ambitv_edge_color_withpadding_processor_free;
       
-      if (ambitv_edge_color_processor_configure(priv, argc, argv) < 0) {
+      if (ambitv_edge_color_withpadding_processor_configure(priv, argc, argv) < 0) {
          goto errReturn;
       }
    }
