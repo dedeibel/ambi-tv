@@ -96,7 +96,7 @@ ambitv_edge_color_processor_update_sink(
          
          if (0 == sink->f_map_output_to_point(sink, i, edge->width, edge->height, &x, &y)) {
             point_to_box(&x, &y, DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT, edge->width, edge->height);
-            ambitv_video_fmt_avg_rgb_for_block(rgb, edge->frame, x, y, DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT, edge->bytesperline, edge->fmt, 4);
+            ambitv_video_fmt_avg_rgb_for_block(rgb, edge->frame, x, y, DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT, edge->bytesperline, edge->fmt, 1);
             
             sink->f_set_output_to_rgb(sink, i, rgb[0], rgb[1], rgb[2]);
          }
