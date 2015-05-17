@@ -401,16 +401,63 @@ ambitv_v4l2_grab_read_frame(struct v4l2_grab* grabber)
    return ret;
 }
 
+static long
+ambitv_ms_between(struct timeval* now, struct timeval* earlier)
+{
+   return (long)((now->tv_sec  - earlier->tv_sec)  * 1000) +
+          (long)((now->tv_usec - earlier->tv_usec) / 1000);
+}
+
 static int
 ambitv_v4l2_grab_capture_loop_iteration(struct ambitv_source_component* grabber)
 {
    int ret = 0;
    fd_set fds;
    struct timeval tv;
+   // TODO bpeter move to priv struct
+   static struct timeval fps_start = { .tv_sec = 0, .tv_usec = 0 };
+   static struct timeval fps_cmp = { .tv_sec = 0, .tv_usec = 0 };
+   static long fps_passed_ms;
+   static long fps_frames_cnt = 0;
+   static struct timeval loop_time_start = { .tv_sec = 0, .tv_usec = 0 };
+   static struct timeval loop_time_end   = { .tv_sec = 0, .tv_usec = 0 };
+   static unsigned int delta_count = 0;
+   static time_t delta_sec_sum = 0;
+   static suseconds_t delta_usec_sum = 0;
    
    struct v4l2_grab* grab_priv = (struct v4l2_grab*)grabber->priv;
    if (NULL == grab_priv)
       return -1;
+
+   gettimeofday(&loop_time_end, NULL);
+   if (loop_time_start.tv_sec != 0) {
+     time_t delta_sec  = loop_time_end.tv_sec - loop_time_start.tv_sec;
+     suseconds_t delta_usec = loop_time_end.tv_usec - loop_time_start.tv_usec;
+    
+     delta_sec_sum += delta_sec;
+     delta_usec_sum += delta_usec;
+     delta_count++;
+   }
+
+   if (fps_start.tv_sec == 0) {
+      gettimeofday(&fps_start, NULL);
+   }
+
+   gettimeofday(&fps_cmp, NULL);
+   fps_passed_ms = ambitv_ms_between(&fps_cmp, &fps_start);
+   if (fps_passed_ms >= 1000) {
+       long sps = delta_sec_sum / delta_count;
+       long ups = delta_usec_sum / delta_count;
+       printf("fps %ld, delta(t) %lds %ldus, fps max %ld\n", fps_frames_cnt, sps, ups, 1000000 / ups);
+
+       delta_sec_sum = 0;
+       delta_usec_sum = 0;
+       delta_count = 0;
+
+       gettimeofday(&fps_start, NULL);
+       fps_frames_cnt = 0;
+   }
+   fps_frames_cnt++;
    
    FD_ZERO(&fds);
    FD_SET(grab_priv->fd, &fds);
@@ -419,6 +466,8 @@ ambitv_v4l2_grab_capture_loop_iteration(struct ambitv_source_component* grabber)
    tv.tv_usec  = 0;
    
    ret = select(grab_priv->fd+1, &fds, NULL, NULL, &tv);
+
+   gettimeofday(&loop_time_start, NULL);
    
    if (ret < 0) {
       if (EINTR == errno)
