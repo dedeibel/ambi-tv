@@ -29,6 +29,10 @@
 #include <sys/time.h>
 #include <termios.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <linux/limits.h>
+
 #include "parse-conf.h"
 #include "registrations.h"
 #include "program.h"
@@ -48,6 +52,7 @@ struct ambitv_main_conf {
    char*          config_path;
    
    int            cur_prog, ambitv_on, gpio_fd;
+   int            control_fifo_fd;
    int            button_cnt;
    struct timeval last_button_press;
    volatile int   running;
@@ -149,13 +154,14 @@ ambitv_runloop()
    
    FD_ZERO(&fds); FD_ZERO(&ex_fds);
    FD_SET(STDIN_FILENO, &fds);
+   FD_SET(conf.control_fifo_fd, &fds);
    if (conf.gpio_fd >= 0)
       FD_SET(conf.gpio_fd, &ex_fds);
    
    tv.tv_sec   = 0;
    tv.tv_usec  = 500000;
    
-   ret = select(MAX(STDIN_FILENO, conf.gpio_fd)+1, &fds, NULL, &ex_fds, &tv);
+   ret = select(MAX3(STDIN_FILENO, conf.control_fifo_fd, conf.gpio_fd)+1, &fds, NULL, &ex_fds, &tv);
       
    if (ret < 0) {
       if (EINTR != errno && EWOULDBLOCK != errno) {
@@ -206,7 +212,7 @@ ambitv_runloop()
    if (conf.gpio_fd >= 0 && FD_ISSET(conf.gpio_fd, &ex_fds)) {
       char buf[16];
       
-      ret = read(conf.gpio_fd, buf, sizeof(*buf));
+      ret = read(conf.gpio_fd, buf, sizeof(buf));
       lseek(conf.gpio_fd, 0, SEEK_SET);
       
       if (ret < 0) {
@@ -252,6 +258,42 @@ ambitv_runloop()
             
             conf.button_cnt = 0;
             memset(&conf.last_button_press, 0, sizeof(struct timeval));
+         }
+      }
+   }
+
+   if (conf.control_fifo_fd >= 0 && FD_ISSET(conf.control_fifo_fd, &fds)) {
+      char buf[256];
+
+      ambitv_log(ambitv_log_info, LOGNAME "BUFSIZ %d\n", sizeof(buf));
+
+      ret = read(conf.control_fifo_fd, buf, sizeof(buf));
+      if (ret < 0) {
+         if (EINTR != errno && EWOULDBLOCK != errno) {
+            ambitv_log(ambitv_log_error, LOGNAME "failed to read from control fifo: %s\n",
+                  strerror(errno));
+            ret = -1;
+         } else {
+            ret = 0;
+         }
+         goto finishLoop;
+      } else if (0 == ret) {
+         goto finishLoop;
+      }
+
+      buf[sizeof(buf) - 1] = 0;
+      ambitv_log(ambitv_log_info, LOGNAME "FIFO READ: '%s'\n", buf);
+
+      if (strncmp("NEXT_PROGRAM", buf, 12) == 0) {
+         ret = ambitv_cycle_next_program();
+         if (ret < 0) {
+            goto finishLoop;
+         }
+      }
+      else if (strncmp("PAUSE", buf, 5) == 0) {
+         ret = ambitv_toggle_paused();
+         if (ret < 0) {
+            goto finishLoop;
          }
       }
    }
@@ -351,6 +393,46 @@ ambitv_main_configure(int argc, char** argv)
 }
 
 int
+ambitv_create_control_fifo()
+{
+   const char* CONTROL_FIFO_DIR = "/var/run/ambi-tv";
+   const char* CONTROL_FIFO_PATH = "/var/run/ambi-tv/control_fifo";
+   int ret, fifo;
+   mode_t prev_umask;
+
+   prev_umask = umask(0);
+
+   ret = mkdir(CONTROL_FIFO_DIR, 0755);
+   if (ret != 0 && errno != EEXIST) {
+      ambitv_log(ambitv_log_error, LOGNAME "Could not create control fifo dir %s: %s\n", CONTROL_FIFO_DIR, strerror(errno));
+      return -1;
+   }
+
+   ret = mkfifo(CONTROL_FIFO_PATH, 0666);
+   if (ret != 0) {
+      if (errno == EEXIST) {
+         ambitv_log(ambitv_log_info, LOGNAME "fifo file '%s' already exists, using it. Delete it in case of problems.\n", CONTROL_FIFO_PATH);
+         umask(prev_umask);
+      }
+      else {
+         ambitv_log(ambitv_log_error, LOGNAME "could not create control fifo '%s': %s\n",
+               CONTROL_FIFO_PATH, strerror(errno));
+         umask(prev_umask);
+         return -1;
+      }
+   }
+
+   fifo = open(CONTROL_FIFO_PATH, O_RDWR | O_NONBLOCK);
+   if (fifo == -2) {
+      ambitv_log(ambitv_log_error, LOGNAME "could not open control fifo '%s': %s\n",
+            CONTROL_FIFO_PATH, strerror(errno));
+      return -1;
+   }
+
+   return fifo;
+}
+
+int
 main(int argc, char** argv)
 {
    int ret = 0, i;
@@ -375,6 +457,7 @@ main(int argc, char** argv)
    conf.config_path     = DEFAULT_CONFIG_PATH;
    conf.ambitv_on       = 1;
    conf.gpio_fd         = -1;
+   conf.control_fifo_fd = -1;
    conf.running         = 1;
    
    ret = ambitv_main_configure(argc, argv);
@@ -448,6 +531,12 @@ main(int argc, char** argv)
    if (conf.gpio_idx >= 0) {
       ambitv_log(ambitv_log_info,
          "\tphysical (gpio) button: click to pause/resume, double-click to cycle between programs.\n");
+   }
+
+   conf.control_fifo_fd = ambitv_create_control_fifo();
+   if (conf.control_fifo_fd < 0) {
+      ambitv_log(ambitv_log_error, LOGNAME "failed to create control fifo, aborting...\n");
+      goto errReturn;
    }
    
    while (conf.running && ambitv_runloop() >= 0);

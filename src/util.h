@@ -22,6 +22,7 @@
 
 #define MIN(x,y)              ((x) > (y)) ? (y) : (x)
 #define MAX(x,y)              ((x) > (y)) ? (x) : (y)
+#define MAX3(x,y,z)           (MAX(MAX(x, y), z))
 #define CONSTRAIN(a, l, r)    (MIN(MAX((l), (a)), (r)))
 
 int
