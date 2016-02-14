@@ -114,7 +114,7 @@ ambitv_edge_color_withpadding_processor_update_sink(
 
 			// Hack, setting superflous LEDs to white in order to consume a minimum
 			// amount of power
-			for (w = n_out; w < 240; w++) {
+      for (w = 203; w < 235; w++) {
 				unsigned char r = 255;
 				unsigned char g = 255;
 				unsigned char b = 255;
