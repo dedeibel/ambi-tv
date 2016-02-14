@@ -81,10 +81,6 @@ void yuv_to_rgb(int y, int u, int v, unsigned char* r, unsigned char* g, unsigne
 #define YUYV_BYTES_PER_PIXEL 2
 #define YUYV_PIXEL_PER_TUPLE 2
 
-/*
-            point_to_box(&x, &y, DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT, edge->width, edge->height);
-            ambitv_video_fmt_avg_rgb_for_block(rgb, edge->frame, x, y, DEFAULT_BOX_WIDTH, DEFAULT_BOX_HEIGHT, edge->bytesperline, edge->fmt, 4);
-*/
 int avg_rgb_for_block_yuyv(unsigned char* rgb, const void* pixbuf, int x, int y, int w, int h, int bytesperline, int coarseness)
 {
    int i, j, k, v, y1, u, y2, cnt = 0;
