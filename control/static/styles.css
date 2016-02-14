@@ -1,0 +1,20 @@
+
+.subtext {
+  font-size: 11px;
+  line-height: 10px;
+  white-space: nowrap;
+}
+
+.on,
+.off {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.on {
+  color: green;
+}
+
+.off {
+  color: red;
+}

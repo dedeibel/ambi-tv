@@ -1,4 +1,5 @@
-bin/**
+bin/ambi-tv
+bin/testrunner
 *.o
 *.swp
 .DS_Store

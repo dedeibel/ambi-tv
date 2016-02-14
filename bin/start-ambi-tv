@@ -1,0 +1,4 @@
+#!/bin/sh
+BASEDIR=$(dirname "$(readlink -f $0)")
+echo $$ > /var/run/ambi-tv/pid
+exec "$BASEDIR/ambi-tv"

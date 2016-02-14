@@ -160,3 +160,9 @@ Thus, I fired up a Windows VM and sniffed the USB protocol to find out how to en
 I also found that I had to use `raspi-config` to overclock my Raspberry Pi to the highest settings in order to get a USB video stream without any artefacts at all. Thus, I added some passive heatsinks to the USB/Ethernet chipset and the Broadcom SoC on the Pi. I've had it running for days now, and the heatsinks don't even get particularly warm.
 
 I've included the usbtv driver with my PAL patch in the `misc` directory, and while it's still unofficial, I'd actually recommend the fushicai grabber for ambi-tv, since the setup works extremely well for me. However, be aware that **I claim absolutely no credit for the usbtv driver**. I only took this off linux-next and hacked the PAL support into it.
+
+## Control via HTTP
+
+See the control subfolder. You can switch programs, toggle pause or halt the
+mashine using it. Mobile friendly.
+

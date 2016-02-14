@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ambi-tv controls</title>
+
+    <link rel="apple-touch-icon" href="static/layout/assets/img/apple-touch-icon.png">
+    <link rel="shortcut icon" href="static/layout/favicon.ico">
+
+    <link rel="stylesheet" href="static/layout/assets/css/styles.css">
+<!--    <link rel="stylesheet" href="static/styles.css"> APPENDED TO STYLES CSS -->
+  </head>
+  <body>
+    <!-- currently unused script src="static/scripts.js"></script> -->
+    <div class="container">
+      <div class="header">
+        <h1 class="header-heading">ambi-tv control</h1>
+      </div>
+      <div class="nav-bar">
+        <ul class="nav">
+        </ul>
+      </div>
+      <div class="content">
+        <div class="main">
+
+          <h1>Controls</h1>
+          <hr>
+
+          <!-- Paragraphs -->
+          <h3>Status</h3>
+
+          <table class="table table-striped">
+            <!--
+            <thead>
+              <tr>
+                <th>Running</th>
+                <th>Username</th>
+              </tr>
+            </thead>
+            -->
+            <tbody>
+              <tr>
+                <th scope="row">Running</th>
+                <td>
+                  {% if app_running %}
+                  <span class="on">yes</span>
+                  {% else %}
+                  <span class="off">no</span>
+                  {% endif %}
+                  <span class="subtext">(pid {{app_pid}})</span>
+                </td>
+              </tr>
+              <tr>
+                <th scope="row">FIFO setup</th>
+                <td>
+                  {% if fifo_exists %}
+                  <span class="on">yes</span>
+                  {% else %}
+                  <span class="off">no</span>
+                  {% endif %}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Programs</h3>
+
+          <a href="/next-program" class="btn">Next program</a>
+          <a href="/pause" class="btn">Pause</a>
+          <a href="/halt" class="btn">Halt</a>
+
+          <hr>
+
+        </div>
+      </div>
+      <div class="footer">
+        <span><a href="https://github.com/dedeibel">dedeibel</a></span><span>/</span>
+        <strong><a href="https://github.com/dedeibel/ambi-tv">ambi-tv</a></strong></br>
+        <span class="subtext">
+          <span>forked from <a href="https://github.com/gkaindl/ambi-tv">gkaindl/ambi-tv</a></span>
+        </span>
+      </div>
+    </div>
+  </body>
+</html>

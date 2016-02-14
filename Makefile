@@ -92,7 +92,7 @@ test: bin/testrunner
 clean:
 	rm -f $(OBJ_AMBITV_LIB)
 	rm -f $(OBJ_TESTS)
-	rm -rf bin
+	rm -rf bin/ambi-tv bin/testrunner
 
 .PHONY = all clean
 
