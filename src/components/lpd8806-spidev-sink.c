@@ -174,6 +174,12 @@ ambitv_lpd8806_set_output_to_rgb(
    int ret = -1, *outp = NULL, i, *rgb[] = {&r, &g, &b};
    struct ambitv_lpd8806_priv* lpd8806 =
       (struct ambitv_lpd8806_priv*)component->priv;
+
+   // In case the color is below a threshhold, set it completely
+   // to zero.
+   if (r < 10 && g < 10 && b < 10) {
+     r = g = b = 0;
+   }
    
    outp = ambitv_lpd8806_ptr_for_output(lpd8806, idx, NULL, NULL);
    
