@@ -36,12 +36,9 @@
 
 #define LOGNAME      "registration: "
 
-struct ambitv_component_registration {
-   char* name;
-   void* (*constructor)(const char*, int, char**);
-};
+static const size_t REGISTRATION_SIZE = sizeof(struct ambitv_component_registration);
 
-static struct ambitv_component_registration registrations[] = {
+static struct ambitv_component_registration default_registrations[] = {
    {
       .name             = "v4l2-grab-source",
       .constructor      = (void* (*)(const char*, int, char**))ambitv_v4l2_grab_create
@@ -69,6 +66,7 @@ static struct ambitv_component_registration registrations[] = {
    
    { NULL, NULL }
 };
+static struct ambitv_component_registration* registrations = default_registrations;
 
 int
 ambitv_register_component_for_name(const char* name, int argc, char** argv)
@@ -153,3 +151,62 @@ ambitv_register_program_for_name(const char* name, int argc, char** argv)
    
    return ret;
 }
+
+size_t
+ambitv_count_registration_entries(struct ambitv_component_registration* registrations) {
+  size_t number_of_entries = 0;
+  struct ambitv_component_registration* current;
+  for (current = registrations; current->name != NULL; current++) {
+    number_of_entries++;
+  }
+  return number_of_entries;
+}
+
+void
+ambitv_append_component(struct ambitv_component_registration* component) {
+  size_t number_of_entries = ambitv_count_registration_entries(registrations);
+  struct ambitv_component_registration* new_registrations = (struct ambitv_component_registration*)malloc((number_of_entries + 2) * REGISTRATION_SIZE);
+
+  struct ambitv_component_registration* current_old;
+  struct ambitv_component_registration* current_new;
+  // copy until terminator
+  for (current_new = new_registrations, current_old = registrations; current_old->name != NULL; current_new++, current_old++) {
+    memcpy(current_new, current_old, REGISTRATION_SIZE);
+  }
+  // insert the new component
+  memcpy(current_new, component, REGISTRATION_SIZE);
+
+  // append terminator
+  current_new++;
+  memcpy(current_new, current_old, REGISTRATION_SIZE);
+
+  if (registrations != default_registrations) {
+    free(registrations);
+  }
+
+  registrations = new_registrations;
+}
+
+char**
+ambitv_get_component_list() {
+  size_t number_of_entries = ambitv_count_registration_entries(registrations);
+  char** components = (char**)malloc((number_of_entries + 1) * sizeof(char*));
+
+  char** current_component = components;
+  struct ambitv_component_registration* current_registration;
+  for (current_component = components, current_registration = registrations; current_registration->name != NULL; current_registration++, current_component++) {
+    *current_component = strdup(current_registration->name);
+  }
+  *current_component = NULL;
+  return components;
+}
+
+void
+ambitv_free_component_list(char** component_list) {
+  char** current_component;
+  for (current_component = component_list; *current_component != NULL; current_component++) {
+    free(*current_component);
+  }
+  free(component_list);
+}
+

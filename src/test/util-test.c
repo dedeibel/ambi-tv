@@ -1,6 +1,7 @@
 
 #include "CUnit/Basic.h"
 #include "util.h"
+#include "util-test.h"
 
 void test_append_ptr_to_list_adding_an_entry() {
    void** list_of_ints = NULL;

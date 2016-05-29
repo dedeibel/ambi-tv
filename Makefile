@@ -46,8 +46,8 @@ endif
 #
 all: $(AMBITV)
 
-SRC_AMBITV_LIB = src/video-fmt.c src/parse-conf.c src/component.c   \
-	src/registrations.c src/util.c src/program.c src/log.c src/color.c      \
+SRC_AMBITV_LIB = src/log.c src/video-fmt.c src/parse-conf.c src/component.c   \
+	src/registrations.c src/util.c src/program.c src/color.c      \
 	src/gpio.c                                                              \
 	src/components/v4l2-grab-source.c src/components/avg-color-processor.c  \
 	src/components/lpd8806-spidev-sink.c src/components/timer-source.c      \
@@ -64,6 +64,12 @@ dir=@mkdir -p bin
 bin/ambi-tv: $(OBJ_AMBITV_LIB) $(OBJ_AMBITV_MAIN)
 	$(dir)
 	$(CC) $(LDFLAGS) $^ -o $@      
+
+libambitv.so: $(SRC_AMBITV_LIB)
+	$(CC) $(CFLAGS) -shared -Wl,-soname,libambitv.so -o $@ -fPIC $^
+
+ambitv.o: $(OBJ_AMBITV_LIB)
+	$(LD) -r -o $@ $^
 
 #
 # Automated tests

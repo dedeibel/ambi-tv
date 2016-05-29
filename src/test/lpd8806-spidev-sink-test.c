@@ -6,17 +6,11 @@
 #include "component.h"
 #include "components/lpd8806-spidev-sink.h"
 #include "components/lpd8806-spidev-sink.r"
+#include "lpd8806-spidev-sink-test.h"
 
 /*
 set tabstop=6 softtabstop=0 expandtab shiftwidth=3 smarttab
 */
-
-int init_suite(void) {
-   return 0;
-}
-int clean_suite(void) {
-   return 0;
-}
 
 static struct ambitv_sink_component* SINK;
 static int DISPLAY_WIDTH = 100;
@@ -368,7 +362,7 @@ int lpd8806_spidev_sink_test_add_suite() {
    CU_pSuite pSuite = NULL;
 
    /* add a suite to the registry */
-   pSuite = CU_add_suite("lpd8806 spidev sink", &init_suite, &clean_suite);
+   pSuite = CU_add_suite("lpd8806 spidev sink", NULL, NULL);
    if (NULL == pSuite) {
       CU_cleanup_registry();
       return CU_get_error();

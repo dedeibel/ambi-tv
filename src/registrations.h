@@ -20,10 +20,24 @@
 #ifndef __AMBITV_REGISTRATIONS_H__
 #define __AMBITV_REGISTRATIONS_H__
 
+struct ambitv_component_registration {
+   char* name;
+   void* (*constructor)(const char*, int, char**);
+};
+
 int
 ambitv_register_component_for_name(const char* name, int argc, char** argv);
 
 int
 ambitv_register_program_for_name(const char* name, int argc, char** argv);
+
+void
+ambitv_append_component(struct ambitv_component_registration* component);
+
+char**
+ambitv_get_component_list();
+
+void
+ambitv_free_component_list(char** component_list);
 
 #endif // __AMBITV_REGISTRATIONS_H__
