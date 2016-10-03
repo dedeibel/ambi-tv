@@ -166,3 +166,9 @@ I've included the usbtv driver with my PAL patch in the `misc` directory, and wh
 See the control subfolder. You can switch programs, toggle pause or halt the
 mashine using it. Mobile friendly.
 
+    apt-get install python-flask
+    python control.py
+
+![Control UI](doc/controls-ui.jpg)
+
+
