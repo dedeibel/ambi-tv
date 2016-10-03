@@ -97,8 +97,8 @@ A program defines a set of component instances that should be active at the same
 
 Have a look at the `sample.conf` to see how this works. Maybe these test images might help finding the right values.
 
-* [doc/test-borders_1280x720.png](test borders.png)
-* [doc/test-overscan_1280x720.png](test overscan)
+* [test borders.png](doc/test-borders_1280x720.png)
+* [test overscan.png](doc/test-overscan_1280x720.png)
 
 ## Components
 
