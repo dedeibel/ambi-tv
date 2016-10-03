@@ -63,6 +63,22 @@ void test_parse_led_string_range_ascending() {
    CU_ASSERT_EQUAL(ret, 0);
 }
 
+void test_parse_led_string_range_ascending2() {
+   char* config_value = "0-9";
+   int *led_str;
+   void*** led_strp = (void***)&led_str;
+   int led_len;
+   int ret = ambitv_parse_led_string(config_value, &led_str, &led_len);
+
+   CU_ASSERT_EQUAL(led_len, 10);
+   CU_ASSERT_EQUAL((int)(*led_strp)[0], 0);
+   CU_ASSERT_EQUAL((int)(*led_strp)[1], 1);
+   CU_ASSERT_EQUAL((int)(*led_strp)[2], 2);
+   // ...
+   CU_ASSERT_EQUAL((int)(*led_strp)[9], 9);
+   CU_ASSERT_EQUAL(ret, 0);
+}
+
 void test_parse_led_string_range_descending() {
    char* config_value = "3-1";
    int *led_str;
@@ -119,6 +135,7 @@ int util_test_add_suite() {
    if ((NULL == CU_add_test(pSuite, "test_append_ptr_to_list_adding_an_entry", test_append_ptr_to_list_adding_an_entry))  ||
        (NULL == CU_add_test(pSuite, "test_append_ptr_to_list_adding_another_entry", test_append_ptr_to_list_adding_another_entry)) ||
        (NULL == CU_add_test(pSuite, "test_parse_led_string_range_ascending", test_parse_led_string_range_ascending)) ||
+       (NULL == CU_add_test(pSuite, "test_parse_led_string_range_ascending2", test_parse_led_string_range_ascending2)) ||
        (NULL == CU_add_test(pSuite, "test_parse_led_string_range_descending", test_parse_led_string_range_descending)) ||
        (NULL == CU_add_test(pSuite, "test_parse_led_string_with_implicit_gaps", test_parse_led_string_with_implicit_gaps)) ||
        (NULL == CU_add_test(pSuite, "test_parse_led_string_with_gaps", test_parse_led_string_with_gaps))
