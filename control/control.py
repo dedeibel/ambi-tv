@@ -1,7 +1,7 @@
 import atexit
 import os.path
 import errno
-from flask import Flask, render_template, url_for, redirect, request
+from flask import Flask, render_template, url_for, redirect
 from subprocess import call
 app = Flask(__name__)
 
@@ -13,27 +13,23 @@ def index():
     make_sure_fifo_opened()
     return render_template('main.html', fifo_exists=fifo_exists(), app_running=app_running(), app_pid=app_pid)
 
-@app.route('/do', methods=['POST'])
-def action():
-    if 'next-program' in request.form.keys():
-        next_program()
-    elif 'pause' in request.form.keys():
-        pause()
-    elif 'halt' in request.form.keys():
-        halt()
-    return redirect(url_for('index'))
-
+@app.route('/next-program')
 def next_program():
     make_sure_fifo_opened()
     send("NEXT_PROGRAM")
+    return index()
 
+@app.route('/pause')
 def pause():
     make_sure_fifo_opened()
     send('PAUSE')
+    return index()
 
+@app.route('/halt')
 def halt():
     make_sure_fifo_opened()
     call(["sudo", "shutdown", "-h", "now"])
+    return index()
 
 def fifo_exists():
     return os.path.exists(FIFO_PATH)
@@ -42,7 +38,11 @@ def app_running():
     global app_pid
     app_pid = 'na'
     try:
-        app_pid = int(open(PIDFILE).read())
+        app_pid_str = open(PIDFILE).read()
+        if len(app_pid_str) != 0:
+          app_pid = int(app_pid_str)
+        else:
+          return False
     except IOError as err:
         print "app pid file not found, so not running"
         return False
@@ -93,9 +93,10 @@ def open_fifo():
 def shutdown():
     control_fifo.close()
 
+atexit.register(shutdown)
+
 if __name__ == '__main__':
-    #app.debug = True
-    atexit.register(shutdown)
+    app.debug = True
     open_fifo()
-    app.run(host='0.0.0.0',port=5000)
+    app.run(host='0.0.0.0')
 

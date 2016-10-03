@@ -1,0 +1,14 @@
+[Unit]
+Description=Ambilight Controls
+#Wants=ambitv.service
+After=ambitv.service
+
+[Service]
+WorkingDirectory=/home/pi/ambi-tv/control
+ExecStart=/usr/bin/python control.py
+Restart=on-abort
+User=pi
+
+[Install]
+WantedBy=multi-user.target
+

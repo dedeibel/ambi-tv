@@ -1,0 +1,13 @@
+[Unit]
+Description=Ambilight
+
+[Service]
+WorkingDirectory=/home/pi/ambi-tv
+ExecStart=/usr/bin/script --return -c "/home/pi/ambi-tv/bin/ambi-tv" /dev/null
+ExecStartPost=-/bin/sh -c 'sleep 1; pgrep ambi-tv > /var/run/ambi-tv/pid'
+Restart=on-abort
+User=pi
+
+[Install]
+WantedBy=multi-user.target
+
