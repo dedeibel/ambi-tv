@@ -182,7 +182,7 @@ Navigate to `http://your-ambitv:5000`
 
 ## Automatic startup using systemd
 
-There are two startup service files for systemd, which is now standard in jessie, available. Just run the following.
+There are two [startup service files](systemd) for systemd, which is now standard in jessie, available. Just run the following.
 
 ```
 sudo cp systemd/*service /etc/systemd/system/
