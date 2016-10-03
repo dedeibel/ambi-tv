@@ -2,4 +2,5 @@ bin/ambi-tv
 bin/testrunner
 *.o
 *.swp
+*.swo
 .DS_Store

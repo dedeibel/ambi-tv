@@ -10,7 +10,7 @@
     <link rel="shortcut icon" href="static/layout/favicon.ico">
 
     <link rel="stylesheet" href="static/layout/assets/css/styles.css">
-<!--    <link rel="stylesheet" href="static/styles.css"> APPENDED TO STYLES CSS -->
+    <!--    <link rel="stylesheet" href="static/styles.css"> APPENDED TO STYLES CSS -->
   </head>
   <body>
     <!-- currently unused script src="static/scripts.js"></script> -->
@@ -33,12 +33,12 @@
 
           <table class="table table-striped">
             <!--
-            <thead>
+              <thead>
               <tr>
-                <th>Running</th>
-                <th>Username</th>
+              <th>Running</th>
+              <th>Username</th>
               </tr>
-            </thead>
+              </thead>
             -->
             <tbody>
               <tr>
@@ -67,9 +67,11 @@
 
           <h3>Programs</h3>
 
-          <a href="/next-program" class="btn">Next program</a>
-          <a href="/pause" class="btn">Pause</a>
-          <a href="/halt" class="btn">Halt</a>
+          <form name="action" method="POST" action="/do">
+            <input type="submit" name="next-program" value="Next program" class="btn"/>
+            <input type="submit" name="pause" value="Pause" class="btn"/>
+            <input type="submit" name="halt" value="Halt" class="btn"/>
+          </form>
 
           <hr>
 
