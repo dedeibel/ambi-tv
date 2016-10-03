@@ -199,6 +199,91 @@ fail_buf:
 }
 
 static int
+ambitv_v4l2_list_available_standards(struct v4l2_grab* grabber)
+{
+   struct v4l2_input input;
+   struct v4l2_standard standard;
+   
+   memset (&input, 0, sizeof (input));
+   
+   if (-1 == ioctl (grabber->fd, VIDIOC_G_INPUT, &input.index)) {
+      ambitv_log(ambitv_log_error, LOGNAME "VIDIOC_G_INPUT: %d (%s).\n",
+         errno, strerror(errno));
+      return -1;
+   }
+   
+   if (-1 == ioctl (grabber->fd, VIDIOC_ENUMINPUT, &input)) {
+      ambitv_log(ambitv_log_error, LOGNAME "VIDIOC_ENUMINPUT: %d (%s).\n",
+         errno, strerror(errno));
+      return -1;
+   }
+   
+   ambitv_log(ambitv_log_info,
+      "v4l2 device %s (%s) supports:\n",
+      grabber->device_name, input.name);
+   
+   memset(&standard, 0, sizeof (standard));
+   standard.index = 0;
+   
+   while (0 == ioctl (grabber->fd, VIDIOC_ENUMSTD, &standard)) {
+      if (standard.id & input.std)
+         ambitv_log(ambitv_log_info, "        %s\n", standard.name);
+      standard.index++;
+   }
+   
+   /* EINVAL indicates the end of the enumeration, which cannot be
+      empty unless this device falls under the USB exception. */
+   if (errno != EINVAL || standard.index == 0) {
+      ambitv_log(ambitv_log_error, LOGNAME "VIDIOC_ENUMINPUT: %d (%s).\n",
+         errno, strerror(errno));
+      return -1;
+   }
+      
+   return 0;
+}
+
+
+static int
+ambitv_v4l2_set_encoding_standard(struct v4l2_grab* grabber)
+{
+   struct v4l2_input input;
+   v4l2_std_id standard_id;
+   
+   memset(&input, 0, sizeof (input));
+   
+   if (-1 == xioctl(grabber->fd, VIDIOC_G_INPUT, &input.index)) {
+      ambitv_log(ambitv_log_error, LOGNAME "could not query input device index: %d (%s).\n",
+         errno, strerror(errno));
+      return -1;
+   }
+   
+   if (-1 == xioctl(grabber->fd, VIDIOC_ENUMINPUT, &input)) {
+      ambitv_log(ambitv_log_error, LOGNAME "could not query input device capabilities: %d (%s).\n",
+         errno, strerror(errno));
+      return -1;
+   }
+   
+   if (0 != (input.std & V4L2_STD_PAL_H)) {
+      standard_id = V4L2_STD_PAL_H;
+   }
+   else {
+      ambitv_log(ambitv_log_warn, LOGNAME "v4l2 device does not support PAL_H. Choosing generic PAL_H standard,\n"\
+          "look into it if large parts of the bottom image are missing. Listing available standards.\n",
+         grabber->device_name);
+      ambitv_v4l2_list_available_standards(grabber);
+      standard_id = V4L2_STD_PAL;
+   }
+   
+   if (-1 == xioctl(grabber->fd, VIDIOC_S_STD, &standard_id)) {
+      ambitv_log(ambitv_log_error, LOGNAME "could not set input device encoding standard: %d (%s).\n",
+         errno, strerror(errno));
+      return -1;
+   }
+   
+   return 0;
+}
+
+static int
 ambitv_v4l2_grab_init_device(struct v4l2_grab* grabber)
 {
    int ret;
@@ -230,6 +315,13 @@ ambitv_v4l2_grab_init_device(struct v4l2_grab* grabber)
    ret = xioctl(grabber->fd, VIDIOC_G_FMT, &vid_fmt);
    if (ret < 0) {
       ambitv_log(ambitv_log_error, LOGNAME "failed to determine video format of '%s'.\n",
+         grabber->device_name);
+      return -EINVAL;
+   }
+
+   ret = ambitv_v4l2_set_encoding_standard(grabber);
+   if (ret < 0) {
+      ambitv_log(ambitv_log_error, LOGNAME "failed to set video encoding standard of '%s'.\n",
          grabber->device_name);
       return -EINVAL;
    }
