@@ -265,10 +265,12 @@ ambitv_v4l2_set_encoding_standard(struct v4l2_grab* grabber)
    
    if (0 != (input.std & V4L2_STD_PAL_H)) {
       standard_id = V4L2_STD_PAL_H;
+      ambitv_log(ambitv_log_info, LOGNAME "selecting PAL_H encoding standard.\n");
    }
    else {
-      ambitv_log(ambitv_log_warn, LOGNAME "v4l2 device does not support PAL_H. Choosing generic PAL_H standard,\n"\
-          "look into it if large parts of the bottom image are missing. Listing available standards.\n",
+      ambitv_log(ambitv_log_warn, LOGNAME "v4l2 device %s does not support PAL_H. Selecting generic PAL standard,\n"\
+          "this might be okay, look into it if large parts of the bottom image are missing.\n"\
+          "Listing available standards.\n",
          grabber->device_name);
       ambitv_v4l2_list_available_standards(grabber);
       standard_id = V4L2_STD_PAL;
