@@ -1,6 +1,0 @@
-#!/bin/sh
-BASEDIR=$(dirname "$(readlink -f $0)")
-RUNDIR=/var/run/ambi-tv
-[[ -d "$RUNDIR" ]] || mkdir -p "$RUNDIR"
-echo $$ > "$RUNDIR/pid"
-exec "$BASEDIR/ambi-tv"
