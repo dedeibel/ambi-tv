@@ -171,7 +171,7 @@ On raspbian jessie the shipped ``usbtv`` kernel module is working fine if compat
 
 ## Control via HTTP
 
-A small python webapp is available to control ambi-tv. See the [control](control) subfolder. You can switch programs, toggle pause or halt the mashine. The site is also obile friendly.
+A small python webapp is available to control ambi-tv. See the [control](control) subfolder. You can switch programs, toggle pause or halt the mashine. The site is also mobile friendly.
 
     apt-get install python-flask
     python control.py
@@ -191,9 +191,5 @@ sudo systemctl enable ambitv_controls
 sudo systemctl start ambitv
 sudo systemctl start ambitv_controls
 ```
-
-
-
-
 
 
