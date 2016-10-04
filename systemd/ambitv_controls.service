@@ -1,6 +1,5 @@
 [Unit]
 Description=Ambilight Controls
-#Wants=ambitv.service
 After=ambitv.service
 
 [Service]
