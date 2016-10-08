@@ -1,0 +1,5 @@
+#!/bin/sh
+BASEDIR=$(dirname "$(readlink -f $0)")
+echo $$ > /var/run/ambi-tv/pid
+# script: provide an interactive stdin even when started by systemd
+exec /usr/bin/script --return -c "$BASEDIR/ambi-tv" /dev/null

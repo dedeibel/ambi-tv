@@ -95,7 +95,10 @@ A program defines a set of component instances that should be active at the same
         ...
     }
 
-Have a look at the `sample.conf` to see how this works.
+Have a look at the `sample.conf` to see how this works. Maybe these test images might help finding the right values.
+
+* [test borders.png](doc/test-borders_1280x720.png)
+* [test overscan.png](doc/test-overscan_1280x720.png)
 
 ## Components
 
@@ -161,8 +164,32 @@ I also found that I had to use `raspi-config` to overclock my Raspberry Pi to th
 
 I've included the usbtv driver with my PAL patch in the `misc` directory, and while it's still unofficial, I'd actually recommend the fushicai grabber for ambi-tv, since the setup works extremely well for me. However, be aware that **I claim absolutely no credit for the usbtv driver**. I only took this off linux-next and hacked the PAL support into it.
 
+### raspbian >= jessie
+
+On raspbian jessie the shipped ``usbtv`` kernel module is working fine if compatible with your video grabber. It has the possibility to set the video encoding standard and I had to use PAL-H because otherwise large parts of the screen were missing at the bottom. Apprently this standard defines more "lines".
+
+
 ## Control via HTTP
 
-See the control subfolder. You can switch programs, toggle pause or halt the
-mashine using it. Mobile friendly.
+A small python webapp is available to control ambi-tv. See the [control](control) subfolder. You can switch programs, toggle pause or halt the mashine. The site is also mobile friendly.
+
+    apt-get install python-flask
+    python control.py
+    
+Navigate to `http://your-ambitv:5000`
+
+![Control UI](doc/controls-ui.jpg)
+
+## Automatic startup using systemd
+
+There are two [startup service files](systemd) for systemd, which is now standard in jessie, available. Just run the following.
+
+```
+sudo cp systemd/*service /etc/systemd/system/
+sudo systemctl enable ambitv
+sudo systemctl enable ambitv_controls
+sudo systemctl start ambitv
+sudo systemctl start ambitv_controls
+```
+
 

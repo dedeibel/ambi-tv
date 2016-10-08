@@ -3,4 +3,5 @@ bin/testrunner
 *.o
 *.so
 *.swp
+*.swo
 .DS_Store
