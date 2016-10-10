@@ -32,6 +32,8 @@ CC = gcc
 
 ifndef LOCALBUILD
 	CFLAGS += -march=armv6 -mfpu=vfp -mfloat-abi=hard
+else
+	CFLAGS += -std=gnu90 -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast
 endif
 
 ifdef DEBUG
@@ -46,13 +48,16 @@ endif
 #
 all: $(AMBITV)
 
-SRC_AMBITV_LIB = src/log.c src/video-fmt.c src/parse-conf.c src/component.c   \
-	src/registrations.c src/util.c src/program.c src/color.c      \
-	src/gpio.c                                                              \
-	src/components/v4l2-grab-source.c src/components/avg-color-processor.c  \
-	src/components/lpd8806-spidev-sink.c src/components/timer-source.c      \
-	src/components/edge-color-processor.c                                   \
+SRC_AMBITV_LIB = src/log.c src/video-fmt.c src/parse-conf.c src/component.c \
+	src/registrations.c src/util.c src/program.c src/color.c \
+	src/gpio.c \
+	src/components/v4l2-grab-source.c src/components/avg-color-processor.c \
+	src/components/lpd8806-spidev-sink.c \
+  src/components/timer-source.c \
+	src/components/edge-color-processor.c \
 	src/components/mood-light-processor.c
+
+LIB_AMBITV_SHARED = libambitv.so
 
 SRC_AMBITV_MAIN = src/main.c
 OBJ_AMBITV_MAIN = $(SRC_AMBITV_MAIN:.c=.o)
@@ -65,7 +70,7 @@ bin/ambi-tv: $(OBJ_AMBITV_LIB) $(OBJ_AMBITV_MAIN)
 	$(dir)
 	$(CC) $(LDFLAGS) $^ -o $@      
 
-libambitv.so: $(SRC_AMBITV_LIB)
+$(LIB_AMBITV_SHARED): $(SRC_AMBITV_LIB)
 	$(CC) $(CFLAGS) -shared -Wl,-soname,libambitv.so -o $@ -fPIC $^
 
 ambitv.o: $(OBJ_AMBITV_LIB)
@@ -97,6 +102,8 @@ test: bin/testrunner
 
 clean:
 	rm -f $(OBJ_AMBITV_LIB)
+	rm -f $(OBJ_AMBITV_MAIN)
+	rm -f $(LIB_AMBITV_SHARED)
 	rm -f $(OBJ_TESTS)
 	rm -rf bin/ambi-tv bin/testrunner
 

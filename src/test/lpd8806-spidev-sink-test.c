@@ -57,12 +57,12 @@ void tear_down()
    tear_down_sink();
 }
 
-inline int *get_led_str(struct ambitv_sink_component* sink, int side, int idx)
+static inline int *get_led_str(struct ambitv_sink_component* sink, int side, int idx)
 {
    return &(((struct ambitv_lpd8806_priv*)sink->priv)->led_str[side][idx]);
 }
 
-inline double *get_inset(struct ambitv_sink_component* sink)
+static inline double *get_inset(struct ambitv_sink_component* sink)
 {
    return ((struct ambitv_lpd8806_priv*)sink->priv)->led_inset;
 }

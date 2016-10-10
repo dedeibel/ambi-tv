@@ -48,7 +48,8 @@ ambitv_color_gamma_lookup_table_free(unsigned char* lut)
       free(lut);
 }
 
-inline unsigned char
+inline
+unsigned char
 ambitv_color_map_with_lut(unsigned char* lut, unsigned char color_component)
 {
    unsigned char mapped_component = color_component;
