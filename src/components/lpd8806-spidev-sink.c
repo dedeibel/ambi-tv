@@ -210,9 +210,12 @@ ambitv_lpd8806_set_output_to_rgb(
             *rgb[i] = ambitv_color_map_with_lut(lpd8806->gamma_lut[i], *rgb[i]);
       }
       
-      lpd8806->grb[3 * ii]       = g >> 1 | 0x80;
+//      lpd8806->grb[3 * ii]       = g >> 1 | 0x80;
+//      lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
+//      lpd8806->grb[3 * ii + 2]   = b >> 1 | 0x80;
+      lpd8806->grb[3 * ii]       = b >> 1 | 0x80;
       lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
-      lpd8806->grb[3 * ii + 2]   = b >> 1 | 0x80;
+      lpd8806->grb[3 * ii + 2]   = g >> 1 | 0x80;
       
       ret = 0;
    }
@@ -549,7 +552,9 @@ ambitv_lpd8806_create(const char* name, int argc, char** argv)
       if (ambitv_lpd8806_configure(lpd8806, argc, argv) < 0)
          goto errReturn;
       
-      priv->grblen   = sizeof(unsigned char) * 3 * priv->actual_num_leds;
+			// BP: Hack for minimum power consumption
+      //priv->grblen   = sizeof(unsigned char) * 3 * priv->actual_num_leds;
+      priv->grblen   = sizeof(unsigned char) * 3 * 240;
       priv->grb      = (unsigned char*)malloc(priv->grblen+1);
       
       if (priv->num_bbuf > 1) {
