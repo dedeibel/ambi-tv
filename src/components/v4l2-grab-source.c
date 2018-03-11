@@ -262,17 +262,10 @@ ambitv_v4l2_set_encoding_standard(struct v4l2_grab* grabber)
       return -1;
    }
    
-   if (0 != (input.std & V4L2_STD_PAL_H)) {
-      standard_id = V4L2_STD_PAL_H;
-      ambitv_log(ambitv_log_info, LOGNAME "selecting PAL_H encoding standard.\n");
-   }
-   else {
-      ambitv_log(ambitv_log_warn, LOGNAME "v4l2 device %s does not support PAL_H. Selecting generic PAL standard,\n"\
-          "this might be okay, look into it if large parts of the bottom image are missing.\n"\
-          "Listing available standards.\n",
-         grabber->device_name);
-      ambitv_v4l2_list_available_standards(grabber);
+   ambitv_v4l2_list_available_standards(grabber);
+   if (input.std & V4L2_STD_PAL) {
       standard_id = V4L2_STD_PAL;
+      ambitv_log(ambitv_log_info, LOGNAME "selecting PAL encoding standard.\n");
    }
    
    if (-1 == xioctl(grabber->fd, VIDIOC_S_STD, &standard_id)) {
@@ -309,20 +302,20 @@ ambitv_v4l2_grab_init_device(struct v4l2_grab* grabber)
          grabber->device_name);
       return -ENODEV;
    }
-   
+
+   ret = ambitv_v4l2_set_encoding_standard(grabber);
+   if (ret < 0) {
+      ambitv_log(ambitv_log_error, LOGNAME "failed to set video encoding standard of '%s'.\n",
+         grabber->device_name);
+      return -EINVAL;
+   }
+
    memset(&vid_fmt, 0, sizeof(vid_fmt));
    vid_fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
    
    ret = xioctl(grabber->fd, VIDIOC_G_FMT, &vid_fmt);
    if (ret < 0) {
       ambitv_log(ambitv_log_error, LOGNAME "failed to determine video format of '%s'.\n",
-         grabber->device_name);
-      return -EINVAL;
-   }
-
-   ret = ambitv_v4l2_set_encoding_standard(grabber);
-   if (ret < 0) {
-      ambitv_log(ambitv_log_error, LOGNAME "failed to set video encoding standard of '%s'.\n",
          grabber->device_name);
       return -EINVAL;
    }
