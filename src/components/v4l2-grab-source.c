@@ -242,7 +242,6 @@ ambitv_v4l2_list_available_standards(struct v4l2_grab* grabber)
    return 0;
 }
 
-
 static int
 ambitv_v4l2_set_encoding_standard(struct v4l2_grab* grabber)
 {
