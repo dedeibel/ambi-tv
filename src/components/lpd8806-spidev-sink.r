@@ -12,6 +12,8 @@ struct ambitv_lpd8806_priv {
    unsigned char*    grb;
    unsigned char**   bbuf;
    int               num_bbuf, bbuf_idx;
+   unsigned char**   dbuf;
+   int               num_dbuf, dbuf_idx;
    double            gamma[3];      // RGB gamma, not GRB!
    unsigned char*    gamma_lut[3];  // also RGB
 };

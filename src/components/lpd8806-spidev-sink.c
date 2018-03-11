@@ -126,9 +126,10 @@ ambitv_lpd8806_commit_outputs(struct ambitv_sink_component* component)
    int ret = -1;
    struct ambitv_lpd8806_priv* lpd8806 =
       (struct ambitv_lpd8806_priv*)component->priv;
+   int next_dbuf_idx = (lpd8806->dbuf_idx + 1) % lpd8806->num_dbuf;
       
    if (lpd8806->fd >= 0) {
-      ret = write(lpd8806->fd, lpd8806->grb, lpd8806->grblen+1);
+      ret = write(lpd8806->fd, lpd8806->dbuf[next_dbuf_idx], lpd8806->grblen+1);
       
       if (ret != lpd8806->grblen+1) {
          if (ret <= 0)
@@ -141,6 +142,8 @@ ambitv_lpd8806_commit_outputs(struct ambitv_sink_component* component)
    
    if (lpd8806->num_bbuf)
       lpd8806->bbuf_idx = (lpd8806->bbuf_idx + 1) % lpd8806->num_bbuf;
+
+   lpd8806->dbuf_idx = next_dbuf_idx;
    
    return ret;
 }
@@ -177,7 +180,7 @@ ambitv_lpd8806_set_output_to_rgb(
 
    // In case the color is below a threshhold, set it completely
    // to zero.
-   if (r < 10 && g < 10 && b < 10) {
+   if (r < 6 && g < 6 && b < 6) {
      r = g = b = 0;
    }
    
@@ -213,9 +216,14 @@ ambitv_lpd8806_set_output_to_rgb(
 //      lpd8806->grb[3 * ii]       = g >> 1 | 0x80;
 //      lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
 //      lpd8806->grb[3 * ii + 2]   = b >> 1 | 0x80;
-      lpd8806->grb[3 * ii]       = b >> 1 | 0x80;
-      lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
-      lpd8806->grb[3 * ii + 2]   = g >> 1 | 0x80;
+      
+      lpd8806->dbuf[lpd8806->dbuf_idx][3 * ii]     = b >> 1 | 0x80;
+      lpd8806->dbuf[lpd8806->dbuf_idx][3 * ii + 1] = r >> 1 | 0x80;
+      lpd8806->dbuf[lpd8806->dbuf_idx][3 * ii + 2] = g >> 1 | 0x80;
+
+//      lpd8806->grb[3 * ii]       = b >> 1 | 0x80;
+//      lpd8806->grb[3 * ii + 1]   = r >> 1 | 0x80;
+//      lpd8806->grb[3 * ii + 2]   = g >> 1 | 0x80;
       
       ret = 0;
    }
@@ -314,7 +322,6 @@ ambitv_lpd8806_configure(struct ambitv_sink_component* component, int argc, char
    memset(lpd8806->led_str, 0, sizeof(int*) * 4);
    lpd8806->num_leds = lpd8806->actual_num_leds = 0;
 
-      
    if (NULL == lpd8806)
       return -1;
 
@@ -326,6 +333,7 @@ ambitv_lpd8806_configure(struct ambitv_sink_component* component, int argc, char
       { "leds-left", required_argument, 0, '2' },
       { "leds-right", required_argument, 0, '3' },
       { "blended-frames", required_argument, 0, 'b' },
+      { "delayed-frames", required_argument, 0, 'e' },
       { "gamma-red", required_argument, 0, '4'},
       { "gamma-green", required_argument, 0, '5'},
       { "gamma-blue", required_argument, 0, '6'},
@@ -378,6 +386,24 @@ ambitv_lpd8806_configure(struct ambitv_sink_component* component, int argc, char
          
                if ('\0' == *eptr && nbuf >= 0) {
                   lpd8806->num_bbuf = (int)nbuf;
+               } else {
+                  ambitv_log(ambitv_log_error, LOGNAME "invalid argument for '%s': '%s'.\n",
+                     argv[optind-2], optarg);
+                  ret = -1;
+                  goto errReturn;
+               }
+            }
+         
+            break;
+         }
+
+         case 'e': {
+            if (NULL != optarg) {
+               char* eptr = NULL;
+               long nbuf = strtol(optarg, &eptr, 10);
+         
+               if ('\0' == *eptr && nbuf >= 0) {
+                  lpd8806->num_dbuf = (int)nbuf;
                } else {
                   ambitv_log(ambitv_log_error, LOGNAME "invalid argument for '%s': '%s'.\n",
                      argv[optind-2], optarg);
@@ -477,12 +503,14 @@ ambitv_lpd8806_print_configuration(struct ambitv_sink_component* component)
       "\tspi hz:            %d\n"
       "\tnumber of leds:    %d\n"
       "\tblending frames:   %d\n"
+      "\tdelayed frames:    %d\n"
       "\tled insets (tblr): %.1f%%, %.1f%%, %.1f%%, %.1f%%\n"
       "\tgamma (rgb):       %.2f, %.2f, %.2f\n",
          lpd8806->device_name,
          lpd8806->spi_speed,
          lpd8806->actual_num_leds,
          lpd8806->num_bbuf,
+         lpd8806->num_dbuf,
          lpd8806->led_inset[0]*100.0, lpd8806->led_inset[1]*100.0,
          lpd8806->led_inset[2]*100.0, lpd8806->led_inset[3]*100.0,
          lpd8806->gamma[0], lpd8806->gamma[1], lpd8806->gamma[2]
@@ -508,6 +536,12 @@ ambitv_lpd8806_free(struct ambitv_sink_component* component)
             free(lpd8806->bbuf[i]);
          free(lpd8806->bbuf);
       }
+
+      if (NULL != lpd8806->dbuf) {
+         for (i=0; i<lpd8806->num_dbuf; i++)
+            free(lpd8806->dbuf[i]);
+         free(lpd8806->dbuf);
+      }
       
       for (i=0; i<3; i++) {
          if (NULL != lpd8806->gamma_lut[i])
@@ -523,12 +557,12 @@ ambitv_lpd8806_create(const char* name, int argc, char** argv)
 {  
    struct ambitv_sink_component* lpd8806 =
       ambitv_sink_component_create(name);
-   
+
    if (NULL != lpd8806) {
       int i;
       struct ambitv_lpd8806_priv* priv =
          (struct ambitv_lpd8806_priv*)malloc(sizeof(struct ambitv_lpd8806_priv));
-      
+
       lpd8806->priv = priv;
       
       memset(priv, 0, sizeof(struct ambitv_lpd8806_priv));
@@ -565,6 +599,18 @@ ambitv_lpd8806_create(const char* name, int argc, char** argv)
          }
       } else
          priv->num_bbuf = 0;
+
+      if (priv->num_dbuf < 1) {
+        priv->num_dbuf = 1;
+      }
+
+      priv->dbuf = (unsigned char**)malloc(sizeof(unsigned char*) * priv->num_dbuf);
+      for (i=0; i<priv->num_dbuf; i++) {
+	      priv->dbuf[i] = (unsigned char*)malloc(priv->grblen);
+	      //memset(priv->dbuf[i], 0, priv->grblen);
+	      memset(priv->dbuf[i], 0x80, priv->grblen);
+	      priv->dbuf[i][priv->grblen] = 0x00; // latch byte
+      }
 
       memset(priv->grb, 0x80, priv->grblen);
       priv->grb[priv->grblen]  = 0x00; // latch byte
