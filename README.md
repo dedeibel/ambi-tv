@@ -16,11 +16,10 @@ ambi-tv only accesses hardware features through abstract kernel interfaces, so i
 
 You will need the following hardware:
 
-- Raspberry Pi (either version A or B)
+- Raspberry Pi 3
 - [HDMI 1 input to 2 outputs splitter](http://www.amazon.com/Sewell-Powered-Splitter-Certified-Up-1080p/dp/B003B4O7NS/ref=sr_1_4?ie=UTF8&qid=1374325014&sr=8-4): Any splitter will do, but I recommend one with an external power supply, since those are still very cheap and provide a much better picture on your screen.
-- [HDMI-to-Composite adapter](http://www.amazon.com/Etekcity®-Composite-Video-Audio-Converter/dp/B008FO7PQA/ref=sr_1_3?ie=UTF8&qid=1374325139&sr=8-3): I use the one linked, which works well for me.
 - [LPD8806 RGB LED strip](http://www.adafruit.com/products/306): The length obviously depends on the size of your screen.
-- [USB video grabber](http://www.amazon.com/EasyCAP-DC60-Creator-Capture-High-quality/dp/B002H3BSCM/ref=sr_1_11?ie=UTF8&qid=1374326275&sr=8-11): Get a cheap one, but be sure that it works under Linux on the Raspberry Pi – Look at the very bottom of this documentation for a recap of how I got this working ("it's complicated...").
+- [USB HDMI video grabber](https://www.ebay.de/itm/Tragbare-USB-2-0-Port-HD-1-Wege-HDMI-1080P-Video-Capture-Karte-fur-Computer-DE/173086531372?hash=item284cc2df2c:g:OS0AAOSwUg9aXxm1): HDMI USB Video grabber with fushicai chip. Mine got to hot and produced black screens. It helped me to take the cover off and add some of those raspberry passive coolers to the HDMI chip. It is supported by the ``usbtv`` kernel module. Alternative name on ebay: ``Mini Portable HD USB 2.0 Port HDMI 1080P 60fps Monitor Video Capture Card for PC``
 - 5V power adapter: Should provide enough current to drive the Raspberry Pi and the RGB strip. I'd recommend one rated for 4A or more.
 - A push switch: Optional, but it can be used to control ambi-tv without needing to go the Linux console.
 - Some cables, soldering tools, etc… Nothing particularly fancy.
@@ -150,25 +149,6 @@ Supporting different video formats is also something you can do to the extend am
 
 Right now, only YUYV (aka. YUV 4:2:2) is supported, because this is what my capture device uses.
 
-## Choosing a USB video grabber
-
-Finding a USB video grabber that works on the Raspberry Pi isn't that easy, unfortunately, but here's what I use, so you can just replicate this.
-
-I bought a cheap video grabber branded "EasyCAP", because I read on the internet that it is based on STK1160 chipset, which is well-supported under Linux. However, it turned out that the one I bought contains a different chipset branded `fushicai usbtv`, which doesn't not have a driver in the mainline kernel yet :-/
-
-However, I found that somebody is currently working on a driver in the `linux-next` tree. At the time of writing, the driver only supports the NTSC input format. When I tested the driver, I found that there were a lot of artefacts with NTSC input, but it looked much better with PAL input. I have no idea why that is the case (probably because PAL uses only 25fps, whereas NTSC uses 30fps, and USB bandwidth is very limited on the Raspberry Pi).
-
-Thus, I fired up a Windows VM and sniffed the USB protocol to find out how to enable PAL input the usbtv linux driver (which, as I've said, is under development and very rudimentary right now). I was happy to see that with PAL input, the usbtv driver works very well for me now!
-
-I also found that I had to use `raspi-config` to overclock my Raspberry Pi to the highest settings in order to get a USB video stream without any artefacts at all. Thus, I added some passive heatsinks to the USB/Ethernet chipset and the Broadcom SoC on the Pi. I've had it running for days now, and the heatsinks don't even get particularly warm.
-
-I've included the usbtv driver with my PAL patch in the `misc` directory, and while it's still unofficial, I'd actually recommend the fushicai grabber for ambi-tv, since the setup works extremely well for me. However, be aware that **I claim absolutely no credit for the usbtv driver**. I only took this off linux-next and hacked the PAL support into it.
-
-### raspbian >= jessie
-
-On raspbian jessie the shipped ``usbtv`` kernel module is working fine if compatible with your video grabber. It has the possibility to set the video encoding standard and I had to use PAL-H because otherwise large parts of the screen were missing at the bottom. Apprently this standard defines more "lines".
-
-
 ## Control via HTTP
 
 A small python webapp is available to control ambi-tv. See the [control](control) subfolder. You can switch programs, toggle pause or halt the mashine. The site is also mobile friendly.
@@ -191,5 +171,3 @@ sudo systemctl enable ambitv_controls
 sudo systemctl start ambitv
 sudo systemctl start ambitv_controls
 ```
-
-
