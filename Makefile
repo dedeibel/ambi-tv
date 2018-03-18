@@ -32,7 +32,6 @@ CC = gcc
 
 ifndef LOCALBUILD
 	CFLAGS += -mfpu=vfp -mfloat-abi=hard
-	#CFLAGS += -march=armv6 -mfpu=vfp -mfloat-abi=hard
 endif
 
 ifdef DEBUG
