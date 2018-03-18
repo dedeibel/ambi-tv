@@ -43,6 +43,7 @@
 #define LOGNAME      "main: "
 
 #define DEFAULT_CONFIG_PATH   "/etc/ambi-tv.conf"
+#define CURRENT_PROGRAM_STATUS_FILE "/var/run/ambi-tv/current_program"
 #define BUTTON_MILLIS         250
 #define BUTTON_MILLIS_HYST    10
 
@@ -92,6 +93,20 @@ ambitv_millis_between(struct timeval* now, struct timeval* earlier)
       (long)((now->tv_usec - earlier->tv_usec) / 1000);
 }
 
+static void
+ambitv_write_program_name(const char* name)
+{
+  FILE *f = fopen(CURRENT_PROGRAM_STATUS_FILE, "w");
+  if (f == NULL) {
+      ambitv_log(ambitv_log_error, LOGNAME "Could not write current program name to '%s' but we'll survive.\n",
+         CURRENT_PROGRAM_STATUS_FILE);
+  }
+  else {
+    fprintf(f, "%s", name);
+    fclose(f);
+  }
+}
+
 static int
 ambitv_cycle_next_program()
 {
@@ -114,6 +129,8 @@ ambitv_cycle_next_program()
    } else {
       ambitv_log(ambitv_log_info, LOGNAME "switched to program '%s'.\n",
          ambitv_programs[conf.cur_prog]->name);
+
+      ambitv_write_program_name(ambitv_programs[conf.cur_prog]->name);
    }
    
    return ret;
@@ -511,6 +528,7 @@ main(int argc, char** argv)
    
    conf.cur_prog = conf.program_idx;
    
+   ambitv_write_program_name(ambitv_programs[conf.cur_prog]->name);
    ret = ambitv_program_run(ambitv_programs[conf.cur_prog]);
    
    if (ret < 0) {

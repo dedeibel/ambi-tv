@@ -1,22 +1,30 @@
 import atexit
 import os.path
 import errno
+import time 
 from flask import Flask, render_template, url_for, redirect, request
 from subprocess import call
 app = Flask(__name__)
 
 FIFO_PATH='/var/run/ambi-tv/control_fifo'
 PIDFILE='/var/run/ambi-tv/pid'
+CURRENT_PROGRAM_FILE='/var/run/ambi-tv/current_program'
 
 @app.route('/')
 def index():
     make_sure_fifo_opened()
-    return render_template('main.html', fifo_exists=fifo_exists(), app_running=app_running(), app_pid=app_pid)
+    return render_template('main.html', 
+            fifo_exists=fifo_exists(),
+            app_running=app_running(),
+            app_pid=app_pid,
+            current_program=current_program()
+            )
 
 @app.route('/do', methods=['POST'])
 def action():
     if 'next-program' in request.form.keys():
         next_program()
+        time.sleep(1) # allow the program to switch ... cheap I know
     elif 'pause' in request.form.keys():
         pause()
     elif 'halt' in request.form.keys():
@@ -69,6 +77,20 @@ def app_running():
     else:
         print "kill worked, app must be running"
         return True
+
+def current_program():
+    try:
+        program = open(CURRENT_PROGRAM_FILE).read()
+        if len(program) != 0:
+          program = program[:256]
+          program = program.replace('program', '', 1)
+          program = program.replace('_', ' ')
+          program = program.strip()
+          program = program[0].upper() + program[1:]
+          return program
+    except IOError as err:
+        print "current program file cannot be read"
+    return 'na'
 
 def send(text):
     control_fifo.write(text + "\n")
